@@ -8,7 +8,7 @@
 <body>
     <div id="app">
         <h1>{{ currentLetter }}</h1>
-        <button @mousedown="startBeep" @mouseup="stopBeep">Beep</button>
+        <button @pointerdown="startBeep" @pointerup="stopBeep">Beep</button>
         <button @click="playCurrentLetter"><span>&#x1F508;</span></button>
     </div>
     <script src="script.js"></script>

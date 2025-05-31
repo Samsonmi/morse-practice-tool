@@ -20,6 +20,8 @@ button {
     border: none;
     cursor: pointer;
     border-radius: 5px;
+    user-select: none;
+    touch-action: manipulation;
 }
 
 button:active {

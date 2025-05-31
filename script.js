@@ -33,12 +33,12 @@ const losingNotes  = [392.00, 329.63, 261.63]; // G4, E4, C4
 PetiteVue.createApp({
     currentLetter: 'A',
     currentMorse: '',
-    audioContext: null,
+    audioContext: new (window.AudioContext || window.webkitAudioContext)(),
     oscillator: null,
     gainNode: null,
     startTime: 0,
     timeout: null,
-    stopBeep: function() {        
+    stopBeep: function() {
         const duration = Date.now() - this.startTime;
         if (duration < 200) {
             this.currentMorse += '.'; // Dot
@@ -60,7 +60,6 @@ PetiteVue.createApp({
         this.beep();
     },
     beep: function() {
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         this.oscillator = this.audioContext.createOscillator();
         this.gainNode = this.audioContext.createGain();
 
@@ -74,12 +73,11 @@ PetiteVue.createApp({
         this.oscillator.start();
     },
     playNotes: function(notes) {
-        const context = new (window.AudioContext || window.webkitAudioContext)();
-        const startTime = context.currentTime;
+        const startTime = this.audioContext.currentTime;
       
         notes.forEach((freq, i) => {
-          const oscillator = context.createOscillator();
-          const gainNode = context.createGain();
+          const oscillator = this.audioContext.createOscillator();
+          const gainNode = this.audioContext.createGain();
       
           oscillator.type = 'sine';
           oscillator.frequency.setValueAtTime(freq, startTime + i * 0.15);
@@ -88,7 +86,7 @@ PetiteVue.createApp({
           gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + i * 0.15 + 0.2);
       
           oscillator.connect(gainNode);
-          gainNode.connect(context.destination);
+          gainNode.connect(this.audioContext.destination);
       
           oscillator.start(startTime + i * 0.15);
           oscillator.stop(startTime + i * 0.15 + 0.3);
@@ -104,10 +102,6 @@ PetiteVue.createApp({
         if (this.gainNode) {
             this.gainNode.disconnect();
             this.gainNode = null;
-        }
-        if (this.audioContext) {
-            this.audioContext.close();
-            this.audioContext = null;
         }
     },
     checkMorse: function() {
@@ -137,19 +131,18 @@ PetiteVue.createApp({
         }
     },
     playSine: function(duration) {
-        const context = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = context.createOscillator();
-        const gainNode = context.createGain();
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
 
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(600, context.currentTime); // Frequency in Hz
-        gainNode.gain.setValueAtTime(0.5, context.currentTime);
+        oscillator.frequency.setValueAtTime(600, this.audioContext.currentTime); // Frequency in Hz
+        gainNode.gain.setValueAtTime(0.5, this.audioContext.currentTime);
 
         oscillator.connect(gainNode);
-        gainNode.connect(context.destination);
+        gainNode.connect(this.audioContext.destination);
 
         oscillator.start();
-        oscillator.stop(context.currentTime + (duration / 1000));
+        oscillator.stop(this.audioContext.currentTime + (duration / 1000));
     }
 }).mount('#app')
 
