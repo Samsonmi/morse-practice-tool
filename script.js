@@ -116,15 +116,40 @@ PetiteVue.createApp({
             this.currentMorse = '';
             this.playNotes(winningNotes);
         } else {
-            // Optionally, provide feedback to the user
             console.log('Incorrect Morse: ' + this.currentMorse);
-            this.currentMorse = ''; // Reset for next try
+            this.currentMorse = '';
             this.playNotes(losingNotes);
         }
     },
     getRandomLetter: function() {
         const letters = Object.keys(morseCode);
         return letters[Math.floor(Math.random() * letters.length)];
+    },
+    playCurrentLetter: function() {
+        this.playMorse(morseCode[this.currentLetter]);
+    },
+    playMorse: async function(morse) {
+        const unitTime = 100; // ms
+        for (let i = 0; i < morse.length; i++) {
+            const timeOfBeep = morse[i] === '.' ? unitTime : unitTime * 3
+            this.playSine(timeOfBeep)
+            await new Promise(resolve => setTimeout(resolve, timeOfBeep + unitTime));
+        }
+    },
+    playSine: function(duration) {
+        const context = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = context.createOscillator();
+        const gainNode = context.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(600, context.currentTime); // Frequency in Hz
+        gainNode.gain.setValueAtTime(0.5, context.currentTime);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(context.destination);
+
+        oscillator.start();
+        oscillator.stop(context.currentTime + (duration / 1000));
     }
 }).mount('#app')
 
