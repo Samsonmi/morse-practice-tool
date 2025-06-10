@@ -27,8 +27,22 @@ const morseCode = {
     'Z': '--..'
 };
 
-const winningNotes = [523.25, 659.25, 783.99]; // C5, E5, G5 (a C major arpeggio)
-const losingNotes  = [392.00, 329.63, 261.63]; // G4, E4, C4
+const DASH_MULTIPLIER = 3;
+const DOT_DASH_THRESHOLD = 200;
+
+const GAIN_END_VALUE = 0.001;
+const GAIN_RAMP_DOWN_TIME = 0.05;
+const GAIN_START_VALUE = 0.2;
+const GAIN_VALUE = 0.5;
+const MORSE_CHECK_DELAY = 750;
+const NOTE_TIME_INCREMENT = 0.15;
+const OSCILLATOR_FREQUENCY = 600;
+const OSCILLATOR_STOP_TIME = 0.3;
+const RAMP_TIME = 0.2;
+const UNIT_TIME = 100;
+
+const LOSING_NOTES  = [392.00, 329.63, 261.63]; // G4, E4, C4
+const WINNING_NOTES = [523.25, 659.25, 783.99]; // C5, E5, G5 (a C major arpeggio)
 
 PetiteVue.createApp({
     currentLetter: 'A',
@@ -40,7 +54,7 @@ PetiteVue.createApp({
     timeout: null,
     stopBeep: function() {
         const duration = Date.now() - this.startTime;
-        if (duration < 200) {
+        if (duration < DOT_DASH_THRESHOLD) {
             this.currentMorse += '.'; // Dot
         } else {
             this.currentMorse += '-'; // Dash
@@ -49,7 +63,7 @@ PetiteVue.createApp({
         this.stopSound();
         this.timeout = setTimeout(() => {
             this.checkMorse();
-        }, 750); // Delay checkMorse by 500ms
+        }, MORSE_CHECK_DELAY);
     },
     startBeep: function() {
         if (this.timeout) {
@@ -64,8 +78,8 @@ PetiteVue.createApp({
         this.gainNode = this.audioContext.createGain();
 
         this.oscillator.type = 'sine';
-        this.oscillator.frequency.setValueAtTime(600, this.audioContext.currentTime); // Frequency in Hz
-        this.gainNode.gain.setValueAtTime(0.5, this.audioContext.currentTime);
+        this.oscillator.frequency.setValueAtTime(OSCILLATOR_FREQUENCY, this.audioContext.currentTime); // Frequency in Hz
+        this.gainNode.gain.setValueAtTime(GAIN_VALUE, this.audioContext.currentTime);
 
         this.oscillator.connect(this.gainNode);
         this.gainNode.connect(this.audioContext.destination);
@@ -80,22 +94,22 @@ PetiteVue.createApp({
           const gainNode = this.audioContext.createGain();
       
           oscillator.type = 'sine';
-          oscillator.frequency.setValueAtTime(freq, startTime + i * 0.15);
+          oscillator.frequency.setValueAtTime(freq, startTime + i * NOTE_TIME_INCREMENT);
       
-          gainNode.gain.setValueAtTime(0.2, startTime + i * 0.15);
-          gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + i * 0.15 + 0.2);
+          gainNode.gain.setValueAtTime(GAIN_START_VALUE, startTime + i * NOTE_TIME_INCREMENT);
+          gainNode.gain.exponentialRampToValueAtTime(GAIN_END_VALUE, startTime + i * NOTE_TIME_INCREMENT + RAMP_TIME);
       
           oscillator.connect(gainNode);
           gainNode.connect(this.audioContext.destination);
       
-          oscillator.start(startTime + i * 0.15);
-          oscillator.stop(startTime + i * 0.15 + 0.3);
+          oscillator.start(startTime + i * NOTE_TIME_INCREMENT);
+          oscillator.stop(startTime + i * NOTE_TIME_INCREMENT + OSCILLATOR_STOP_TIME);
         });
     },
     stopSound: function() {
         if (this.oscillator) {
-            this.gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.05);
-            this.oscillator.stop(this.audioContext.currentTime + 0.1);
+            this.gainNode.gain.exponentialRampToValueAtTime(GAIN_END_VALUE, this.audioContext.currentTime + GAIN_RAMP_DOWN_TIME);
+            this.oscillator.stop(this.audioContext.currentTime + OSCILLATOR_STOP_TIME);
             this.oscillator.disconnect();
             this.oscillator = null;
         }
@@ -108,11 +122,11 @@ PetiteVue.createApp({
         if (this.currentMorse === morseCode[this.currentLetter]) {
             this.currentLetter = this.getRandomLetter();
             this.currentMorse = '';
-            this.playNotes(winningNotes);
+            this.playNotes(WINNING_NOTES);
         } else {
             console.log('Incorrect Morse: ' + this.currentMorse);
             this.currentMorse = '';
-            this.playNotes(losingNotes);
+            this.playNotes(LOSING_NOTES);
         }
     },
     getRandomLetter: function() {
@@ -123,11 +137,10 @@ PetiteVue.createApp({
         this.playMorse(morseCode[this.currentLetter]);
     },
     playMorse: async function(morse) {
-        const unitTime = 100; // ms
         for (let i = 0; i < morse.length; i++) {
-            const timeOfBeep = morse[i] === '.' ? unitTime : unitTime * 3
+            const timeOfBeep = morse[i] === '.' ? UNIT_TIME : UNIT_TIME * DASH_MULTIPLIER
             this.playSine(timeOfBeep)
-            await new Promise(resolve => setTimeout(resolve, timeOfBeep + unitTime));
+            await new Promise(resolve => setTimeout(resolve, timeOfBeep + UNIT_TIME));
         }
     },
     playSine: function(duration) {
@@ -135,8 +148,8 @@ PetiteVue.createApp({
         const gainNode = this.audioContext.createGain();
 
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(600, this.audioContext.currentTime); // Frequency in Hz
-        gainNode.gain.setValueAtTime(0.5, this.audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(OSCILLATOR_FREQUENCY, this.audioContext.currentTime); // Frequency in Hz
+        gainNode.gain.setValueAtTime(GAIN_VALUE, this.audioContext.currentTime);
 
         oscillator.connect(gainNode);
         gainNode.connect(this.audioContext.destination);

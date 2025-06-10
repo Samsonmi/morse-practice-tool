@@ -9,6 +9,11 @@ body {
 
 #app {
     text-align: center;
+    user-select: none;
+    touch-action: manipulation;
+    -webkit-user-select: none;     /* Safari & older iOS */
+    -webkit-touch-callout: none;   /* Disables touch callout menu */
+    -webkit-tap-highlight-color: transparent; /* Removes gray tap flash */
 }
 
 button {
@@ -20,8 +25,6 @@ button {
     border: none;
     cursor: pointer;
     border-radius: 5px;
-    user-select: none;
-    touch-action: manipulation;
 }
 
 button:active {
